@@ -1,0 +1,31 @@
+{
+  "name": "lwu-xhr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "build": "cd packages/lwu-xhr && tsup --config ./tsup.config.ts",
+    "publish": "cd packages/lwu-xhr && npm publish --access public"
+  },
+  "keywords": [],
+  "author": "kviewui@163.com",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.4.2",
+    "vitepress": "1.0.0-beta.5"
+  },
+  "homepage": "https://lwu-xhr.fdproxy.cn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kviewui/lwu-xhr.git"
+  },
+  "private": "true",
+  "dependencies": {
+    "tsup": "^7.1.0",
+    "typescript": "^5.1.6"
+  }
+}

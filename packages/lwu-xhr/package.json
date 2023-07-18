@@ -1,0 +1,27 @@
+{
+  "name": "lwu-xhr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "kviewui@163.com",
+  "license": "MIT",
+  "homepage": "https://lwu-xhr.fdproxy.cn",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kviewui/lwu-xhr.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kviewui/lwu-xhr/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.2"
+  }
+}

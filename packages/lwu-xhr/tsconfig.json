@@ -1,0 +1,34 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "strict": true,
+        "target": "ES2015",
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "moduleResolution": "Node",
+        "lib": [
+            "ESNext",
+            "WebWorker"
+        ],
+        "outDir": "dist",
+        "types": [
+            "node"
+        ]
+    },
+    "include": [
+        "src/**/*.ts",
+        "index.ts"
+    ],
+    "exclude": [
+        "./dist"
+    ],
+    "ts-node": {
+        "compilerOptions": {
+            "module": "CommonJS",
+            "types": [
+                "node"
+            ]
+        }
+    }
+}
