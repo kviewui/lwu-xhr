@@ -55,6 +55,10 @@ export interface Config {
  */
 export interface RequestConfig extends Config {
     /**
+     * @description 请求的服务器URL 
+     */
+    url?: string;
+    /**
      * @description 请求的url参数
      */
     params?: object | URLSearchParams;

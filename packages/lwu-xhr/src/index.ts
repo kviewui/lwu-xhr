@@ -13,8 +13,10 @@ class LwuXHR {
          * @description 请求拦截器
          */
         request: {
-            use: (beforeRequest: Function, error: Function) => {
-                this.beforeRequest(beforeRequest);
+            use: (beforeRequest: (config: Config) => Config, error: (error: any) => Promise<unknown>) => {
+                this.xhr?.addEventListener('beforesend', () => {
+                    this.reqConfig = beforeRequest(this.reqConfig) as RequestConfig;
+                });
                 this.requestError(error);
             }
         },
@@ -22,8 +24,10 @@ class LwuXHR {
          * @description 响应拦截器
          */
         response: {
-            use: (response: Function, error: Function) => {
-                this.responseCall(response);
+            use: (response: (response: any) => any, error: (error: any) => Promise<unknown>) => {
+                this.xhr?.addEventListener('loadend', () => {
+                    this.response = response(this.response);
+                });
                 this.responseError(error);
             }
         }
@@ -37,7 +41,7 @@ class LwuXHR {
      * @param func 请求前执行的函数 
      */
     private beforeRequest(func: Function) {
-        func(this.reqConfig);
+        this.reqConfig = func(this.reqConfig);
     }
 
     /**
@@ -53,7 +57,7 @@ class LwuXHR {
      * @param func 响应后执行的函数 
      */
     private responseCall(func: Function) {
-        func(this.response);
+        this.response = func(this.response);
     }
 
     /**
@@ -108,6 +112,14 @@ class LwuXHR {
     }
 
     /**
+     * @description 请求后执行的函数
+     */
+    private afterRequest() {
+        this.reqConfig = this.defaultsReqConfig;
+        this.xhr = null;
+    }
+
+    /**
      * @description 发送请求 
      * @param url 请求 URL  
      * @param method 请求方法 
@@ -126,14 +138,28 @@ class LwuXHR {
                 this.xhr.setRequestHeader(key, value as string);
             }
         }
+
         this.xhr.open(method, `${this.defaults.baseURL}${url}${this.reqConfig.params && objToQueryString(this.reqConfig.params)}`, true);
-        this.xhr.send(this.buildSendData(method));
-        return new Promise((resolve, reject: (reson: ResolveCallback) => void) => {
+
+        return new Promise((resolve, reject: (reason: ResolveCallback) => void) => {
             if (this.xhr) {
+                // 请求拦截监听
+                this.xhr.addEventListener('beforesend', () => {
+                    // this.reqConfig = this.interceptors.request.use((beforeRequest: this.reqConfig) => {}, );
+                });
+
+                // 响应拦截监听
+                this.xhr.addEventListener('loadend', () => {
+                    this.response = this.xhr?.response;
+                });
+
+                this.xhr.send(this.buildSendData(method));
+
                 /**
                  * @description 请求超时
                  */
                 this.xhr.ontimeout = () => {
+                    this.afterRequest();
                     reject({
                         data: {},
                         statusCode: 408,
@@ -148,6 +174,7 @@ class LwuXHR {
                  * @description 请求失败
                  */
                 this.xhr.onerror = () => {
+                    this.afterRequest();
                     reject({
                         data: {},
                         statusCode: 502,
@@ -163,16 +190,19 @@ class LwuXHR {
                  */
                 this.xhr.onreadystatechange = () => {
                     if (this.xhr && this.xhr.readyState === this.xhr.DONE) {
-                        resolve({
-                            data: this.xhr.response,
-                            statusCode: this.xhr.status,
-                            statusText: this.xhr.statusText,
-                            headers: this.xhr.getResponseHeader,
-                            request: this.xhr as XMLHttpRequest
-                        });
-                        return;
+                        this.response = this.xhr.response;
                     }
                 }
+
+                this.afterRequest();
+                resolve({
+                    data: this.response as any,
+                    statusCode: this.xhr.status,
+                    statusText: this.xhr.statusText,
+                    headers: this.xhr.getResponseHeader,
+                    request: this.xhr as XMLHttpRequest
+                });
+                return;
             }
         });
     }
@@ -183,7 +213,11 @@ class LwuXHR {
      * @param config 请求的配置
      */
     public get(url: string, config?: Config) {
-
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
+        return this.commonRequest(url, 'GET');
     }
 
     /**
@@ -192,7 +226,12 @@ class LwuXHR {
      * @param config 请求的配置
      */
     public post(url: string, config?: Config) {
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
 
+        return this.commonRequest(url, 'POST');
     }
 
     /**
@@ -201,7 +240,12 @@ class LwuXHR {
      * @param config 请求的配置 
      */
     public put(url: string, config?: Config) {
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
 
+        return this.commonRequest(url, 'POST');
     }
 
     /**
@@ -210,7 +254,12 @@ class LwuXHR {
      * @param config 请求的配置 
      */
     public delete(url: string, config?: Config) {
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
 
+        return this.commonRequest(url, 'DELETE');
     }
 
     /**
@@ -218,7 +267,12 @@ class LwuXHR {
      * @param config 请求的配置 
      */
     public request(config: Config) {
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
 
+        return this.commonRequest(this.reqConfig.url as string, this.reqConfig.method);
     }
 
     /**
@@ -227,7 +281,12 @@ class LwuXHR {
      * @param config 请求的配置 
      */
     public head(url: string, config?: Config) {
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
 
+        return this.commonRequest(url, 'HEAD');
     }
 
     /**
@@ -236,7 +295,12 @@ class LwuXHR {
      * @param config 请求的配置 
      */
     public options(url: string, config?: Config) {
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
 
+        return this.commonRequest(url, 'OPTIONS');
     }
 
     /**
@@ -245,7 +309,19 @@ class LwuXHR {
      * @param config 请求的配置 
      */
     public patch(url: string, config?: Config) {
+        this.reqConfig = {
+            ...this.reqConfig,
+            ...config
+        };
 
+        return this.commonRequest(url, 'PATCH');
+    }
+
+    /**
+     * @description 中断请求
+     */
+    public abort() {
+        this.xhr?.abort();
     }
 
     /**
