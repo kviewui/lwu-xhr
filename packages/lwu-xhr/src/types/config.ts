@@ -25,6 +25,10 @@ export interface Config {
      */
     withCredentials?: boolean;
     /**
+     * @description 响应的数据类型，默认为json
+     */
+    dataType?: string;
+    /**
      * @description 响应的数据类型
      */
     responseType?: XMLHttpRequestResponseType;
@@ -65,5 +69,5 @@ export interface RequestConfig extends Config {
     /**
      * @description 请求的数据
      */
-    data: object;
+    data?: object;
 };

@@ -9,3 +9,19 @@ export const objToQueryString = (obj: { [x: string]: any; }) => {
     });
     return params.join('&');
 }
+
+/**
+ * @description: 判断是否为json字符串 
+ * @param str 需要转换的字符串
+ */
+export const isJSON = (str: string): boolean => {
+    if (typeof str === 'string') {
+        try {
+            const obj = JSON.parse(str);
+            return typeof obj === 'object' && obj;
+        } catch (e) {
+            return false;
+        }
+    }
+    return false; 
+}
