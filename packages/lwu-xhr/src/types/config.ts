@@ -52,6 +52,14 @@ export interface Config {
      * @description node环境中定义允许的http请求内容的最大字节数
      */
     maxBodyLength?: number;
+    /**
+     * @description 自定义请求拦截
+     */
+    before?: Function;
+    /**
+     * @description 自定义响应拦截
+     */
+    after?: Function;
 };
 
 /**

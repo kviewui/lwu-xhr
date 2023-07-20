@@ -22,21 +22,32 @@ class LwuXHRLib {
         request: {
             use: (beforeRequest: (config: RequestConfig) => Config, error: (error: any) => Promise<unknown>, xhr: LwuXHRLib) => {
 
-                this.reqConfig = {
-                    ...this.reqConfig,
-                    ...beforeRequest(this.reqConfig)
-                }
+                // this.reqConfig = {
+                //     ...this.reqConfig,
+                //     ...beforeRequest(this.reqConfig)
+                // }
 
-                console.log(this.reqConfig, this.xhr, '拦截后的配置');
+                // console.log(this.reqConfig, this.xhr, '拦截后的配置');
 
-                this.requestError(error);
+                // this.requestError(error);
             }
         },
         /**
          * @description 响应拦截器
          */
         response: {
-            use: (response: any) => {}
+            use: (beforeResponse: (response: any) => any, error: (error: any) => Promise<unknown>, xhr: LwuXHRLib) => {
+                // console.log(this, 'this');
+                // // this.response = beforeResponse(this.xhr?.response);
+                // if (this.xhr) {
+                //     this.xhr.addEventListener('load', () => {
+                //         console.log(this.xhr, this.xhr?.response, 'xhr响应拦截器new');
+                //         const xhrResponse = this.reqConfig.dataType === 'json' ? JSON.parse(this.xhr?.response) : xhr.response;
+                //         this.response = beforeResponse(xhrResponse);
+                //         console.log(this.response, '响应拦截器返回内容');
+                //     });
+                // }
+            }
         }
     };
 
@@ -93,7 +104,9 @@ class LwuXHRLib {
         xsrfHeaderName: '',
         maxContentLength: 0,
         maxBodyLength: 0,
-        dataType: 'json'
+        dataType: 'json',
+        before: () => { },
+        after: () => { }
     };
 
     /**
@@ -125,7 +138,23 @@ class LwuXHRLib {
      */
     private afterRequest() {
         this.reqConfig = this.defaultsReqConfig;
-        this.xhr = null;
+        // this.xhr = null;
+        // this.xhr = new XMLHttpRequest();
+    }
+
+    /**
+     * @description 创建一个 XMLHttpRequest 实例 
+     * @param method 请求方法  
+     * @param url 请求 URL  
+     */
+    private createXHR(method: Config['method'] = 'GET', url: string) {
+        let xhr = new XMLHttpRequest();
+
+        xhr.open(method, url, true);
+
+        // this.xhr = xhr;
+
+        return xhr;
     }
 
     /**
@@ -136,18 +165,22 @@ class LwuXHRLib {
     private commonRequest(url: string, method: Config['method'] = 'GET'): Promise<ResolveCallback> {
         console.log(this.reqConfig, '请求配置');
         // const xhr = new XMLHttpRequest() as XMLHttpRequest;
-        // this.xhr = xhr;
-        this.xhr = new XMLHttpRequest() as XMLHttpRequest;
-        const xhr = this.xhr;
+        this.xhr = this.createXHR(method, `${this.reqConfig.baseURL}${url}${this.reqConfig.params ? `?${objToQueryString(this.reqConfig.params)}` : ''}`);
+        // this.xhr = new XMLHttpRequest() as XMLHttpRequest;
         if (this.xhr) {
             // 设置超时时间
             this.xhr.timeout = this.reqConfig.timeout ?? 0;
-            // 跨域请求时是否需要使用凭证
-            this.xhr.withCredentials = this.reqConfig.withCredentials ?? false;
             // 响应的数据类型
             this.xhr.responseType = this.reqConfig.responseType ?? '';
 
-            this.xhr.open(method, `${this.reqConfig.baseURL}${url}${this.reqConfig.params ? `?${objToQueryString(this.reqConfig.params)}` : ''}`, true);
+            // this.xhr = xhr;
+
+            // 跨域请求时是否需要使用凭证
+            this.xhr.withCredentials = this.reqConfig.withCredentials ?? false;
+
+            if (this.reqConfig.before) {
+                this.reqConfig = this.reqConfig.before(this.reqConfig);
+            }
 
             // 设置请求头
             if (this.reqConfig.headers) {
@@ -202,7 +235,7 @@ class LwuXHRLib {
                 console.log(this.xhr, '请求中....');
 
                 this.xhr.onloadend = () => {
-                    console.log(xhr, '请求结束了');
+                    console.log(this.response, '请求结束了');
                     resolve({
                         data: this.response as any,
                         statusCode: this.xhr?.status,
@@ -214,17 +247,14 @@ class LwuXHRLib {
                     return;
                 }
 
+                let xhr = this.xhr;
+
                 /**
                  * @description 请求成功
                  */
                 this.xhr.onload = () => {
-                    console.log(xhr, 'done');
-                    console.log(xhr.response, '请求完成了');
-                    console.log(reqConfig, '请求配置');
-                    const xhrResponse = reqConfig.dataType === 'json' ? JSON.parse(xhr.response) : xhr.response;
-                    this.response = xhrResponse;
-                    if (this.interceptors.response.use && this.response) {
-                        this.interceptors.response.use(this.response);
+                    if (this.reqConfig.after) {
+                        this.response = this.reqConfig.after(xhr.response);
                     }
                 }
 

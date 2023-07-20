@@ -62,6 +62,14 @@ interface Config {
      * @description node环境中定义允许的http请求内容的最大字节数
      */
     maxBodyLength?: number;
+    /**
+     * @description 自定义请求拦截
+     */
+    before?: Function;
+    /**
+     * @description 自定义响应拦截
+     */
+    after?: Function;
 }
 /**
  * @description 请求配置
@@ -100,7 +108,7 @@ declare class LwuXHRLib {
          * @description 响应拦截器
          */
         response: {
-            use: (response: any) => void;
+            use: (beforeResponse: (response: any) => any, error: (error: any) => Promise<unknown>, xhr: LwuXHRLib) => void;
         };
     };
     private response;
@@ -144,6 +152,12 @@ declare class LwuXHRLib {
      * @description 请求后执行的函数
      */
     private afterRequest;
+    /**
+     * @description 创建一个 XMLHttpRequest 实例
+     * @param method 请求方法
+     * @param url 请求 URL
+     */
+    private createXHR;
     /**
      * @description 发送请求
      * @param url 请求 URL
