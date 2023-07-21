@@ -1,5 +1,5 @@
 import type { Config, RequestConfig, ResolveCallback } from './types';
-import { objToQueryString } from './tools/';
+import { objToQueryString, PubSub } from './tools/';
 
 /**
  * @description 封装 XMLHttpRequest
