@@ -1,7 +1,10 @@
 import { IRequest, Interceptor } from '../types';
 import { Singleton } from './singleton';
 
-class RequestLibraryImpl implements IRequest {
+/**
+ * 定义一个请求库类，实现 IRequest 接口
+ */
+export class RequestLibraryImpl implements IRequest {
     private xhr: XMLHttpRequest;
     private _timeout: number;
     private _interceptors: Interceptor[];

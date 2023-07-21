@@ -1,2 +1,3 @@
 export * from './decorator';
-export * from './lwuXHRRequest';
+export * from './request';
+export * from './singleton';
