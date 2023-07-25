@@ -1,4 +1,4 @@
-import { IRequest } from "src/types";
+import { IErrorHandlerDecorator, IInterceptorDecorator, IRequest, ITimeoutDecorator } from "src/types";
 import { Singleton } from "./singleton";
 import { RequestLibraryImpl } from "./request";
 import { ErrorHandlerDecorator, InterceptorDecorator, TimeoutDecorator } from "./decorator";
@@ -9,7 +9,7 @@ import { ErrorHandlerDecorator, InterceptorDecorator, TimeoutDecorator } from ".
  * @param options.useInterceptor - 是否使用拦截器
  * @param options.useTimeout - 是否使用超时处理
  * @param options.useErrorHandler - 是否使用错误处理
- * @returns {IRequest} 返回一个请求库实例
+ * @returns {IRequest | IErrorHandlerDecorator | IInterceptorDecorator | ITimeoutDecorator} 返回一个请求库实例
  * @export
  * @example
  * ```ts
@@ -49,28 +49,55 @@ import { ErrorHandlerDecorator, InterceptorDecorator, TimeoutDecorator } from ".
  * ```
  */
 export function create(options?: {
+    /**
+     * @description 是否使用拦截器
+     */
     useInterceptor?: boolean;
+    /**
+     * @description 是否使用超时处理
+     */
     useTimeout?: boolean;
+    /**
+     * @description 是否使用错误处理
+     */
     useErrorHandler?: boolean;
-}): IRequest {
+    /**
+     * @description 自定义装饰器
+     */
+    decorator?: any[];
+}): IInterceptorDecorator | IRequest {
     // 获取一个 XMLHttpRequest 实例
     let xhr = Singleton.getInstance().getXHR();
     // 创建一个请求库实例
     let requestLib = new RequestLibraryImpl(xhr);
     // 如果 useInterceptor 为 true，则为请求库实例添加拦截器
     if (options && options.useInterceptor) {
+        console.log('拦截器装饰器');
         return new InterceptorDecorator(requestLib);
+        // libs = new InterceptorDecorator(requestLib);
     }
 
     // 如果 useTimeout 为 true，则为请求库实例添加超时处理逻辑
-    if (options && options.useTimeout) {
-        return new TimeoutDecorator(requestLib);
-    }
+    // if (options && options.useTimeout) {
+    //     console.log('超时处理装饰器');
+    //     libs = new TimeoutDecorator(new InterceptorDecorator(libs));
+    //     // return new TimeoutDecorator(requestLib);
+    // }
 
-    // 如果 useErrorHandler 为 true，则为请求库实例添加错误处理逻辑
-    if (options && options.useErrorHandler) {
-        return new ErrorHandlerDecorator(requestLib);
-    }
+    // // 如果 useErrorHandler 为 true，则为请求库实例添加错误处理逻辑
+    // if (options && options.useErrorHandler) {
+    //     console.log('错误处理装饰器');
+    //     libs = new ErrorHandlerDecorator(libs);
+    //     // return new ErrorHandlerDecorator(requestLib);
+    // }
+
+    // // 如果存在自定义装饰器，则为请求库实例添加自定义装饰器
+    // if (options && options.decorator) {
+    //     return options.decorator.reduce((requestLib, Decorator) => {
+    //         // return new Decorator(requestLib);
+    //         libs = new Decorator(requestLib);
+    //     }, requestLib);
+    // }
 
     // 如果都不为 true，则直接返回请求库实例
     return requestLib;

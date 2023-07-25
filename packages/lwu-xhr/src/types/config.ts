@@ -15,7 +15,7 @@ export interface Config {
     /**
      * @description 请求头
      */
-    headers?: any;
+    headers?: Record<any, any>;
     /**
      * @description 请求方法
      */
@@ -79,3 +79,33 @@ export interface RequestConfig extends Config {
      */
     data?: object;
 };
+
+/**
+ * @description 响应配置
+ */
+export interface ResponseConfig {
+    /**
+     * @description 响应的数据
+     */
+    data: any;
+    /**
+     * @description 响应状态码
+     */
+    status: number;
+    /**
+     * @description 响应状态信息
+     */
+    statusText: string;
+    /**
+     * @description 响应头
+     */
+    headers: any;
+    /**
+     * @description 请求配置
+     */
+    config: RequestConfig;
+    /**
+     * @description 请求的 XMLHttpRequest 实例
+     */
+    request: XMLHttpRequest;
+}

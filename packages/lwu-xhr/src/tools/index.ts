@@ -27,6 +27,14 @@ export const isJSON = (str: string): boolean => {
 }
 
 /**
+ * 判断是否为空对象 
+ * @param obj - 需要判断的对象
+ */
+export const isEmptyObject = (obj: any): boolean => {
+    return Object.keys(obj).length === 0;
+}
+
+/**
  * 发布订阅类
  * @public
  */

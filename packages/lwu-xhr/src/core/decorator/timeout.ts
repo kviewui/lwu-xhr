@@ -1,11 +1,11 @@
-import { IRequest, Decorator, RequestConfig } from '../../types';
+import { IInterceptorDecorator, IRequest, ITimeoutDecorator, RequestConfig } from '../../types';
 
 /**
  * 定义一个超时处理装饰器类，继承自 RequestInterceptor 类
  */
-export class TimeoutDecorator implements Decorator {
+export class TimeoutDecorator implements ITimeoutDecorator {
 
-    public requestLib: IRequest;
+    public requestLib: IInterceptorDecorator;
 
     /**
      * 定义一个私有的超时时间属性
@@ -27,7 +27,7 @@ export class TimeoutDecorator implements Decorator {
      * @param timeoutHandler - 超时处理函数 
      */
     constructor(
-        requestLib: IRequest,
+        requestLib: IInterceptorDecorator,
     ) {
         this.timeoutHandler = (url: string) => { };
         this.requestLib = requestLib;
@@ -108,6 +108,10 @@ export class TimeoutDecorator implements Decorator {
      * @memberof TimeoutDecorator
      */
     public async put(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.put) {
+            return Promise.reject('当前运行环境不支持 put 请求');
+        }
+
         this.timeoutHandler = () => {
             // 如果有超时处理函数，则执行超时处理函数，将请求地址传入
             this.timeoutHandler && this.timeoutHandler(url);
@@ -141,6 +145,9 @@ export class TimeoutDecorator implements Decorator {
      * @memberof TimeoutDecorator
      */
     public async delete(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.delete) {
+            return Promise.reject('当前运行环境不支持 delete 请求');
+        }
         this.timeoutHandler = () => {
             // 如果有超时处理函数，则执行超时处理函数，将请求地址传入
             this.timeoutHandler && this.timeoutHandler(url);
@@ -174,6 +181,10 @@ export class TimeoutDecorator implements Decorator {
      * @memberof TimeoutDecorator
      */
     public async head(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.head) {
+            return Promise.reject('当前运行环境不支持 head 请求');
+        }
+
         this.timeoutHandler = () => {
             // 如果有超时处理函数，则执行超时处理函数，将请求地址传入
             this.timeoutHandler && this.timeoutHandler(url);
@@ -207,6 +218,10 @@ export class TimeoutDecorator implements Decorator {
      * @memberof TimeoutDecorator
      */
     public async options(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.options) {
+            return Promise.reject('当前运行环境不支持 options 请求');
+        }
+
         this.timeoutHandler = () => {
             // 如果有超时处理函数，则执行超时处理函数，将请求地址传入
             this.timeoutHandler && this.timeoutHandler(url);
@@ -239,6 +254,10 @@ export class TimeoutDecorator implements Decorator {
      * @memberof TimeoutDecorator
      */
     public async request(config: RequestConfig): Promise<any> {
+        if (!this.requestLib.request) {
+            return Promise.reject('当前运行环境不支持 request 请求');
+        }
+
         this.timeoutHandler = () => {
             // 如果有超时处理函数，则执行超时处理函数，将请求地址传入
             this.timeoutHandler && this.timeoutHandler(config.url ?? '');
@@ -272,6 +291,10 @@ export class TimeoutDecorator implements Decorator {
      * @memberof TimeoutDecorator 
      */
     public async patch(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.patch) {
+            return Promise.reject('当前运行环境不支持 patch 请求');
+        }
+
         this.timeoutHandler = () => {
             // 如果有超时处理函数，则执行超时处理函数，将请求地址传入
             this.timeoutHandler && this.timeoutHandler(url);
@@ -302,7 +325,10 @@ export class TimeoutDecorator implements Decorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    public setHeaders(headers: object): void {
+    public setHeaders(headers: Record<any, any>): void {
+        if (!this.requestLib.setHeaders) {
+            throw new Error('当前运行环境不支持 setHeaders 方法');
+        }
         this.requestLib.setHeaders(headers);
     }
 
@@ -313,6 +339,10 @@ export class TimeoutDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public setHeader(key: string, value: string): void {
+        if (!this.requestLib.setHeader) {
+            throw new Error('当前运行环境不支持 setHeader 方法');
+        }
+        
         this.requestLib.setHeader(key, value);
     }
 
@@ -322,10 +352,11 @@ export class TimeoutDecorator implements Decorator {
      * @param timeoutHandler - 超时处理函数
      * @memberof ErrorHandlerDecorator
      */
-    public timeout(timeout: number, timeoutHandler: (url: string) => any): void {
+    public timeout(timeout: number, timeoutHandler: (url: string) => any): this {
         // 将传入的超时时间赋值给私有的超时时间属性
         this._timeout = timeout;
         // 将传入的超时处理函数赋值给私有的超时处理函数属性
         this.timeoutHandler = timeoutHandler;
+        return this;
     }
 }

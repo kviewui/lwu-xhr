@@ -1,9 +1,9 @@
-import { IRequest, Decorator, RequestConfig } from '../../types';
+import { IRequest, IErrorHandlerDecorator, RequestConfig } from '../../types';
 
 /**
  * 定义一个错误处理装饰器类，用来为 XMLHttpRequest 添加错误处理逻辑
  */
-export class ErrorHandlerDecorator implements Decorator {
+export class ErrorHandlerDecorator implements IErrorHandlerDecorator {
     /**
      * 定义一个私有的错误处理函数属性
      */
@@ -74,6 +74,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public async put(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.put) {
+            return Promise.reject('put method is not supported');
+        }
+
         return await this.requestLib.put(url, config).then(
             (response: any) => {
                 // 如果响应成功，返回响应数据
@@ -96,6 +100,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public async delete(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.delete) {
+            return Promise.reject('delete method is not supported');
+        }
+
         return await this.requestLib.delete(url, config).then(
             (response: any) => {
                 // 如果响应成功，返回响应数据
@@ -118,6 +126,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public async head(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.head) {
+            return Promise.reject('head method is not supported');
+        }
+
         return await this.requestLib.head(url, config).then(
             (response: any) => {
                 // 如果响应成功，返回响应数据
@@ -140,6 +152,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public async options(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.options) {
+            return Promise.reject('options method is not supported');
+        }
+
         return await this.requestLib.options(url, config).then(
             (response: any) => {
                 // 如果响应成功，返回响应数据
@@ -162,6 +178,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public async patch(url: string, config?: RequestConfig): Promise<any> {
+        if (!this.requestLib.patch) {
+            return Promise.reject('patch method is not supported');
+        }
+
         return await this.requestLib.patch(url, config).then(
             (response: any) => {
                 // 如果响应成功，返回响应数据
@@ -183,6 +203,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public async request(config: RequestConfig): Promise<any> {
+        if (!this.requestLib.request) {
+            return Promise.reject('request method is not supported');
+        }
+
         return await this.requestLib.request(config).then(
             (response: any) => {
                 // 如果响应成功，返回响应数据
@@ -211,7 +235,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    public setHeaders(headers: object): void {
+    public setHeaders(headers: Record<any, any>): void {
+        if (!this.requestLib.setHeaders) {
+            throw new Error('setHeaders method is not supported');
+        }
         this.requestLib.setHeaders(headers);
     }
 
@@ -222,6 +249,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public setHeader(key: string, value: string): void {
+        if (!this.requestLib.setHeader) {
+            throw new Error('setHeader method is not supported');
+        }
+
         this.requestLib.setHeader(key, value);
     }
 
@@ -231,6 +262,10 @@ export class ErrorHandlerDecorator implements Decorator {
      * @memberof ErrorHandlerDecorator
      */
     public setTimeout(timeout: number): void {
-        this.requestLib.setTimeout && this.requestLib.setTimeout(timeout);
+        if (!this.requestLib.setTimeout) {
+            throw new Error('setTimeout method is not supported');
+        }
+        
+        this.requestLib.setTimeout(timeout);
     }
 }

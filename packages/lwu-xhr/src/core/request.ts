@@ -1,3 +1,4 @@
+import { isEmptyObject, objToQueryString } from 'src/tools';
 import { Config, IRequest, RequestConfig } from '../types';
 
 /**
@@ -52,13 +53,14 @@ export class RequestLibraryImpl implements IRequest {
     public get(url: string, config?: RequestConfig): Promise<any> {
         return new Promise((resolve, reject) => {
             // 如果请求参数存在，则将请求参数转换为查询字符串，拼接到请求地址后面
-            if (config?.params) {
-                url += `?${Object.entries(config.params).map(([key, value]) => `${key}=${value}`).join('&')}`;
+            if (config?.params && isEmptyObject(config.params) === false) {
+                url += `?${objToQueryString(config.params)}`;
             }
             // 设置请求方法和请求地址
             this.xhr.open('GET', url, true);
             // 设置请求头
             this._setHeaders();
+            console.log('config', config);
             // 设置超时时间
             this.xhr.timeout = config?.timeout ?? this.timeout;
             // 发送请求
@@ -394,6 +396,15 @@ export class RequestLibraryImpl implements IRequest {
      */
     public setHeaders(headers: Record<string, string>): void {
         this.headers = headers;
+    }
+
+    /**
+     * 重写 getXHRInstance 方法，返回 XMLHttpRequest 实例
+     * @returns {XMLHttpRequest}
+     * @memberof RequestLibraryImpl
+     */
+    public getXHRInstance(): XMLHttpRequest {
+        return this.xhr;
     }
 
     /**

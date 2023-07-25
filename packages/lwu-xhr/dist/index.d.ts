@@ -1,5 +1,22 @@
 type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'HEAD' | 'OPTIONS' | 'PATCH';
 /**
+ * 请求的回调参数
+ */
+interface ResolveCallback {
+    data: object;
+    statusCode?: number | string;
+    statusText?: string;
+    headers?: object;
+    request?: XMLHttpRequest;
+}
+/**
+ * 定义拦截器接口，声明请求前和请求后的处理方法
+ */
+interface IInterceptor {
+    request: (config: object) => any;
+    response: (data: any) => any;
+}
+/**
  * 定义请求接口，声明请求方法
  * @export
  * @interface IRequest
@@ -28,7 +45,7 @@ interface IRequest {
      * @returns {Promise<any>}
      * @memberof IRequest
      */
-    put(url: string, config?: RequestConfig): Promise<any>;
+    put?: (url: string, config?: RequestConfig) => Promise<any>;
     /**
      * 发送 delete 请求
      * @param url - 请求地址
@@ -36,7 +53,7 @@ interface IRequest {
      * @returns {Promise<any>}
      * @memberof IRequest
      */
-    delete(url: string, config?: RequestConfig): Promise<any>;
+    delete?: (url: string, config?: RequestConfig) => Promise<any>;
     /**
      * 发送 head 请求
      * @param url - 请求地址
@@ -44,7 +61,7 @@ interface IRequest {
      * @returns {Promise<any>}
      * @memberof IRequest
      */
-    head(url: string, config?: RequestConfig): Promise<any>;
+    head?: (url: string, config?: RequestConfig) => Promise<any>;
     /**
      * 发送 options 请求
      * @param url - 请求地址
@@ -52,7 +69,7 @@ interface IRequest {
      * @returns {Promise<any>}
      * @memberof IRequest
      */
-    options(url: string, config?: RequestConfig): Promise<any>;
+    options?: (url: string, config?: RequestConfig) => Promise<any>;
     /**
      * 发送 patch 请求
      * @param url - 请求地址
@@ -60,37 +77,72 @@ interface IRequest {
      * @returns {Promise<any>}
      * @memberof IRequest
      */
-    patch(url: string, config?: RequestConfig): Promise<any>;
+    patch?: (url: string, config?: RequestConfig) => Promise<any>;
     /**
      * 发送请求
      * @param config - 请求配置
      */
-    request(config?: RequestConfig): Promise<any>;
+    request?: (config: RequestConfig) => Promise<any>;
     /**
      * 设置请求头
      * @param key - 请求头的 key
      * @param value - 请求头的 value
      */
-    setHeader(key: string, value: string): void;
+    setHeader?: (key: string, value: string) => void;
     /**
      * 设置请求头
      * @param headers - 请求头对象
      */
-    setHeaders(headers: object): void;
+    setHeaders?: (headers: Record<string, string>) => void;
     /**
      * 设置请求超时时间
      * @param time - 超时时间
      */
     setTimeout?: (time: number) => void;
+    /**
+     * 获取 XMLHttpRequest 实例
+     */
+    getXHRInstance?: () => XMLHttpRequest;
 }
 /**
- * 定义请求装饰器接口，继承 IRequest 接口
+ * 定义请求装饰器基础接口，继承 IRequest 接口
  * @export
  * @interface Decorator
  * @extends {IRequest}
  */
 interface Decorator extends IRequest {
-    requestLib: IRequest;
+    requestLib?: IRequest;
+}
+/**
+ * 定义拦截器装饰器接口，继承 Decorator 接口
+ * @export
+ * @interface InterceptorDecorator
+ * @extends {Decorator}
+ */
+interface IInterceptorDecorator extends Decorator {
+    setRequestInterceptor?: (requestInterceptor: (config: RequestConfig) => RequestConfig) => void;
+    setResponseInterceptor?: (responseInterceptor: (response: any) => any) => void;
+    setConfig?: (config: RequestConfig) => this;
+    getConfig?: () => RequestConfig;
+    timeout?: (timeout: number, timeoutHandler: (url: string) => any) => this;
+}
+/**
+ * 定义错误处理装饰器接口，继承 Decorator 接口
+ * @export
+ * @interface ErrorHandlerDecorator
+ * @extends {Decorator}
+ */
+interface IErrorHandlerDecorator extends IInterceptorDecorator {
+    setErrorHandler?: (errorHandler: (error: any) => void) => void;
+}
+/**
+ * 定义超时处理装饰器接口，继承 Decorator 接口
+ * @export
+ * @interface TimeoutDecorator
+ * @extends {Decorator}
+ */
+interface ITimeoutDecorator extends IErrorHandlerDecorator {
+    timeout?: (timeout: number, timeoutHandler: (url: string) => any) => this;
 }
 
 /**
@@ -108,7 +160,7 @@ interface Config {
     /**
      * @description 请求头
      */
-    headers?: any;
+    headers?: Record<any, any>;
     /**
      * @description 请求方法
      */
@@ -171,11 +223,40 @@ interface RequestConfig extends Config {
      */
     data?: object;
 }
+/**
+ * @description 响应配置
+ */
+interface ResponseConfig {
+    /**
+     * @description 响应的数据
+     */
+    data: any;
+    /**
+     * @description 响应状态码
+     */
+    status: number;
+    /**
+     * @description 响应状态信息
+     */
+    statusText: string;
+    /**
+     * @description 响应头
+     */
+    headers: any;
+    /**
+     * @description 请求配置
+     */
+    config: RequestConfig;
+    /**
+     * @description 请求的 XMLHttpRequest 实例
+     */
+    request: XMLHttpRequest;
+}
 
 /**
  * 定义一个错误处理装饰器类，用来为 XMLHttpRequest 添加错误处理逻辑
  */
-declare class ErrorHandlerDecorator implements Decorator {
+declare class ErrorHandlerDecorator implements IErrorHandlerDecorator {
     /**
      * 定义一个私有的错误处理函数属性
      */
@@ -261,7 +342,7 @@ declare class ErrorHandlerDecorator implements Decorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    setHeaders(headers: object): void;
+    setHeaders(headers: Record<any, any>): void;
     /**
      * 公有方法，用来设置单个请求头
      * @param key - 请求头的 key
@@ -280,11 +361,35 @@ declare class ErrorHandlerDecorator implements Decorator {
 /**
  * 定义一个拦截器装饰器类，用来为 XMLHttpRequest 添加拦截器处理逻辑
  */
-declare class InterceptorDecorator implements Decorator {
+declare class InterceptorDecorator implements IInterceptorDecorator {
     requestLib: IRequest;
     private requestInterceptor;
     private responseInterceptor;
+    /**
+     * 定义一个私有的超时时间属性
+     * @private
+     * @type {number}
+     * @memberof TimeoutDecorator
+     */
+    private _timeout;
+    private _url;
+    /**
+     * 定义一个私有的请求配置属性
+     */
+    private _config;
+    /**
+     * 定义一个私有的超时处理函数属性
+     */
+    private timeoutHandler;
     constructor(requestLib: IRequest);
+    /**
+     * 私有方法，用来拼接请求地址和请求配置
+     * @param url - 请求地址
+     * @param config - 请求配置
+     * @returns {RequestConfig} 返回一个请求配置对象
+     * @memberof InterceptorDecorator
+     */
+    private mergeConfig;
     /**
      * 重写 get 方法，接收请求地址和请求配置，返回一个 Promise 对象，实现 get 请求，并添加拦截器处理逻辑
      * @param url - 请求地址
@@ -351,39 +456,53 @@ declare class InterceptorDecorator implements Decorator {
      * @param headers - 请求头
      * @memberof InterceptorDecorator
      */
-    setHeaders(headers: object): void;
+    setHeaders(headers: Record<any, any>): this;
     /**
      * 公有方法，用于单次设置请求头
      * @param key - 请求头的键
      * @param value - 请求头的值
      * @memberof InterceptorDecorator
      */
-    setHeader(key: string, value: string): void;
+    setHeader(key: string, value: string): this;
     /**
      * 公有方法，用于设置超时时间
      * @param timeout - 超时时间
      * @memberof InterceptorDecorator
      */
-    setTimeout(timeout: number): void;
+    setTimeout(timeout: number): this;
     /**
      * 公有方法，用于设置请求拦截器
      * @param requestInterceptor - 请求拦截器
      * @memberof InterceptorDecorator
      */
-    setRequestInterceptor(requestInterceptor: (config: any) => any): void;
+    setRequestInterceptor(requestInterceptor: (config: any) => any): this;
     /**
      * 公有方法，用于设置响应拦截器
      * @param responseInterceptor - 响应拦截器
      * @memberof InterceptorDecorator
      */
-    setResponseInterceptor(responseInterceptor: (response: any) => any): void;
+    setResponseInterceptor(responseInterceptor: (response: any) => any): this;
+    /**
+     * 公有方法，用于设置超时处理
+     * @param timeout - 超时时间
+     * @param timeoutHandler - 超时处理函数
+     */
+    timeout(timeout: number, timeoutHandler: (url: string) => any): this;
+    /**
+     * 公有方法，用于设置请求配置
+     */
+    setConfig(config: RequestConfig): this;
+    /**
+     * 公有方法，用于获取请求配置
+     */
+    getConfig(): RequestConfig;
 }
 
 /**
  * 定义一个超时处理装饰器类，继承自 RequestInterceptor 类
  */
-declare class TimeoutDecorator implements Decorator {
-    requestLib: IRequest;
+declare class TimeoutDecorator implements ITimeoutDecorator {
+    requestLib: IInterceptorDecorator;
     /**
      * 定义一个私有的超时时间属性
      * @private
@@ -401,7 +520,7 @@ declare class TimeoutDecorator implements Decorator {
      * @param timeout - 超时时间
      * @param timeoutHandler - 超时处理函数
      */
-    constructor(requestLib: IRequest);
+    constructor(requestLib: IInterceptorDecorator);
     /**
      * 重写 get 方法，接收请求地址和请求配置，返回一个 Promise 对象，实现 get 请求，并添加超时处理逻辑
      * @param url - 请求地址
@@ -470,7 +589,7 @@ declare class TimeoutDecorator implements Decorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    setHeaders(headers: object): void;
+    setHeaders(headers: Record<any, any>): void;
     /**
      * 公有方法，用来设置单个请求头
      * @param key - 请求头的 key
@@ -484,7 +603,7 @@ declare class TimeoutDecorator implements Decorator {
      * @param timeoutHandler - 超时处理函数
      * @memberof ErrorHandlerDecorator
      */
-    timeout(timeout: number, timeoutHandler: (url: string) => any): void;
+    timeout(timeout: number, timeoutHandler: (url: string) => any): this;
 }
 
 /**
@@ -608,6 +727,12 @@ declare class RequestLibraryImpl implements IRequest {
      */
     setHeaders(headers: Record<string, string>): void;
     /**
+     * 重写 getXHRInstance 方法，返回 XMLHttpRequest 实例
+     * @returns {XMLHttpRequest}
+     * @memberof RequestLibraryImpl
+     */
+    getXHRInstance(): XMLHttpRequest;
+    /**
      * 定义一个私有的方法，用来设置所有的请求头
      * @private
      * @memberof RequestLibraryImpl
@@ -663,7 +788,7 @@ declare class Singleton {
  * @param options.useInterceptor - 是否使用拦截器
  * @param options.useTimeout - 是否使用超时处理
  * @param options.useErrorHandler - 是否使用错误处理
- * @returns {IRequest} 返回一个请求库实例
+ * @returns {IRequest | IErrorHandlerDecorator | IInterceptorDecorator | ITimeoutDecorator} 返回一个请求库实例
  * @export
  * @example
  * ```ts
@@ -703,9 +828,22 @@ declare class Singleton {
  * ```
  */
 declare function create(options?: {
+    /**
+     * @description 是否使用拦截器
+     */
     useInterceptor?: boolean;
+    /**
+     * @description 是否使用超时处理
+     */
     useTimeout?: boolean;
+    /**
+     * @description 是否使用错误处理
+     */
     useErrorHandler?: boolean;
-}): IRequest;
+    /**
+     * @description 自定义装饰器
+     */
+    decorator?: any[];
+}): IInterceptorDecorator | IRequest;
 
-export { ErrorHandlerDecorator, InterceptorDecorator, RequestLibraryImpl, Singleton, TimeoutDecorator, create };
+export { Config, Decorator, ErrorHandlerDecorator, IErrorHandlerDecorator, IInterceptor, IInterceptorDecorator, IRequest, ITimeoutDecorator, InterceptorDecorator, RequestConfig, RequestLibraryImpl, RequestMethod, ResolveCallback, ResponseConfig, Singleton, TimeoutDecorator, create };
