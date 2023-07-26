@@ -93,17 +93,17 @@ export interface IRequest {
      * @param key - 请求头的 key 
      * @param value - 请求头的 value 
      */
-    setHeader?: (key: string, value: string) => void;
+    setHeader?: (key: string, value: string) => this;
     /**
      * 设置请求头 
      * @param headers - 请求头对象
      */
-    setHeaders?: (headers: Record<string, string>) => void;
+    setHeaders?: (headers: Record<string, string>) => this;
     /**
      * 设置请求超时时间 
      * @param time - 超时时间 
      */
-    setTimeout?: (time: number) => void;
+    setTimeout?: (time: number) => this;
     /**
      * 获取 XMLHttpRequest 实例
      */
@@ -127,8 +127,8 @@ export interface Decorator extends IRequest {
  * @extends {Decorator}
  */
 export interface IInterceptorDecorator extends Decorator {
-    setRequestInterceptor?: (requestInterceptor: (config: RequestConfig) => RequestConfig) => void;
-    setResponseInterceptor?: (responseInterceptor: (response: any) => any) => void;
+    setRequestInterceptor?: (requestInterceptor: (config: RequestConfig) => RequestConfig) => this;
+    setResponseInterceptor?: (responseInterceptor: (response: any) => any) => this;
     setConfig?: (config: RequestConfig) => this;
     getConfig?: () => RequestConfig;
     timeout?: (timeout: number, timeoutHandler: (url: string) => any) => this;

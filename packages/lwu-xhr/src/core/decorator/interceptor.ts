@@ -19,6 +19,7 @@ export class InterceptorDecorator implements IInterceptorDecorator  {
     private _timeout: number = 0;
     private _url = '';
 
+
     /**
      * 定义一个私有的请求配置属性
      */
@@ -109,6 +110,7 @@ export class InterceptorDecorator implements IInterceptorDecorator  {
         config = this.requestInterceptor(config);
         // 调用被装饰的post方法，传入处理后的参数
         const response = await this.requestLib.post(config?.url ?? '', config);
+        console.log(response, 'response');
         return this.responseInterceptor(response);
     }
 

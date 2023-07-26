@@ -88,17 +88,17 @@ interface IRequest {
      * @param key - 请求头的 key
      * @param value - 请求头的 value
      */
-    setHeader?: (key: string, value: string) => void;
+    setHeader?: (key: string, value: string) => this;
     /**
      * 设置请求头
      * @param headers - 请求头对象
      */
-    setHeaders?: (headers: Record<string, string>) => void;
+    setHeaders?: (headers: Record<string, string>) => this;
     /**
      * 设置请求超时时间
      * @param time - 超时时间
      */
-    setTimeout?: (time: number) => void;
+    setTimeout?: (time: number) => this;
     /**
      * 获取 XMLHttpRequest 实例
      */
@@ -120,8 +120,8 @@ interface Decorator extends IRequest {
  * @extends {Decorator}
  */
 interface IInterceptorDecorator extends Decorator {
-    setRequestInterceptor?: (requestInterceptor: (config: RequestConfig) => RequestConfig) => void;
-    setResponseInterceptor?: (responseInterceptor: (response: any) => any) => void;
+    setRequestInterceptor?: (requestInterceptor: (config: RequestConfig) => RequestConfig) => this;
+    setResponseInterceptor?: (responseInterceptor: (response: any) => any) => this;
     setConfig?: (config: RequestConfig) => this;
     getConfig?: () => RequestConfig;
     timeout?: (timeout: number, timeoutHandler: (url: string) => any) => this;
@@ -342,20 +342,20 @@ declare class ErrorHandlerDecorator implements IErrorHandlerDecorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    setHeaders(headers: Record<any, any>): void;
+    setHeaders(headers: Record<any, any>): this;
     /**
      * 公有方法，用来设置单个请求头
      * @param key - 请求头的 key
      * @param value - 请求头的 value
      * @memberof ErrorHandlerDecorator
      */
-    setHeader(key: string, value: string): void;
+    setHeader(key: string, value: string): this;
     /**
      * 公有方法，用来设置超时时间
      * @param timeout - 超时时间
      * @memberof ErrorHandlerDecorator
      */
-    setTimeout(timeout: number): void;
+    setTimeout(timeout: number): this;
 }
 
 /**
@@ -589,14 +589,14 @@ declare class TimeoutDecorator implements ITimeoutDecorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    setHeaders(headers: Record<any, any>): void;
+    setHeaders(headers: Record<any, any>): this;
     /**
      * 公有方法，用来设置单个请求头
      * @param key - 请求头的 key
      * @param value - 请求头的 value
      * @memberof ErrorHandlerDecorator
      */
-    setHeader(key: string, value: string): void;
+    setHeader(key: string, value: string): this;
     /**
      * 公有方法，用来设置超时处理
      * @param timeout - 超时时间
@@ -638,7 +638,21 @@ declare class RequestLibraryImpl implements IRequest {
      * 定义一个私有的属性，用来存储请求超时时间
      */
     private timeout;
+    /**
+     * 定义一个私有的属性，用来存储请求队列
+     */
+    private requestQueue;
+    /**
+     * 定义一个私有的属性，用来存储当前请求
+     */
+    private currentRequest;
+    private pubSub;
     constructor(xhr: XMLHttpRequest);
+    /**
+     * 定义一个私有的方法，用来处理请求队列
+     */
+    private processQueue;
+    private addRequestToQueue;
     /**
      * 重写 get 方法，接收请求地址和请求参数，返回一个 Promise 对象，实现 get 请求
      * @param url - 请求地址
@@ -713,19 +727,19 @@ declare class RequestLibraryImpl implements IRequest {
      * @param value - 请求头的值
      * @memberof RequestLibraryImpl
      */
-    setHeader(key: string, value: string): void;
+    setHeader(key: string, value: string): this;
     /**
      * 重写 setTimeout 方法，接收超时时间，设置超时时间
      * @param timeout - 超时时间
      * @memberof RequestLibraryImpl
      */
-    setTimeout(timeout: number): void;
+    setTimeout(timeout: number): this;
     /**
      * 重写 setHeaders 方法，接收请求头对象，设置请求头
      * @param headers - 请求头对象
      * @memberof RequestLibraryImpl
      */
-    setHeaders(headers: Record<string, string>): void;
+    setHeaders(headers: Record<string, string>): this;
     /**
      * 重写 getXHRInstance 方法，返回 XMLHttpRequest 实例
      * @returns {XMLHttpRequest}

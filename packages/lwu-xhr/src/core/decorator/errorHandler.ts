@@ -235,11 +235,12 @@ export class ErrorHandlerDecorator implements IErrorHandlerDecorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    public setHeaders(headers: Record<any, any>): void {
+    public setHeaders(headers: Record<any, any>): this {
         if (!this.requestLib.setHeaders) {
             throw new Error('setHeaders method is not supported');
         }
         this.requestLib.setHeaders(headers);
+        return this;
     }
 
     /**
@@ -248,12 +249,13 @@ export class ErrorHandlerDecorator implements IErrorHandlerDecorator {
      * @param value - 请求头的 value
      * @memberof ErrorHandlerDecorator
      */
-    public setHeader(key: string, value: string): void {
+    public setHeader(key: string, value: string): this {
         if (!this.requestLib.setHeader) {
             throw new Error('setHeader method is not supported');
         }
 
         this.requestLib.setHeader(key, value);
+        return this;
     }
 
     /**
@@ -261,11 +263,12 @@ export class ErrorHandlerDecorator implements IErrorHandlerDecorator {
      * @param timeout - 超时时间
      * @memberof ErrorHandlerDecorator
      */
-    public setTimeout(timeout: number): void {
+    public setTimeout(timeout: number): this {
         if (!this.requestLib.setTimeout) {
             throw new Error('setTimeout method is not supported');
         }
         
         this.requestLib.setTimeout(timeout);
+        return this;
     }
 }

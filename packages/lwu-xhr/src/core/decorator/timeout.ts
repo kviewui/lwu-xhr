@@ -325,11 +325,12 @@ export class TimeoutDecorator implements ITimeoutDecorator {
      * @param headers - 请求头对象
      * @memberof ErrorHandlerDecorator
      */
-    public setHeaders(headers: Record<any, any>): void {
+    public setHeaders(headers: Record<any, any>): this {
         if (!this.requestLib.setHeaders) {
             throw new Error('当前运行环境不支持 setHeaders 方法');
         }
         this.requestLib.setHeaders(headers);
+        return this;
     }
 
     /**
@@ -338,12 +339,13 @@ export class TimeoutDecorator implements ITimeoutDecorator {
      * @param value - 请求头的 value
      * @memberof ErrorHandlerDecorator
      */
-    public setHeader(key: string, value: string): void {
+    public setHeader(key: string, value: string): this {
         if (!this.requestLib.setHeader) {
             throw new Error('当前运行环境不支持 setHeader 方法');
         }
         
         this.requestLib.setHeader(key, value);
+        return this;
     }
 
     /**

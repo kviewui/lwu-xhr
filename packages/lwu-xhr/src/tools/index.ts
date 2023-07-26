@@ -76,7 +76,7 @@ export class PubSub {
      * @param data - 发布的数据  
      */
     public publish(event: string, data: any) {
-        console.log('publish', event, data); 
+        // console.log('publish', event, data); 
         if (!this.subscribers[event]) {
             return;
         }

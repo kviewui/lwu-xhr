@@ -1,5 +1,6 @@
 import { isEmptyObject, objToQueryString } from 'src/tools';
-import { Config, IRequest, RequestConfig } from '../types';
+import { Config, IRequest, RequestConfig, RequestMethod } from '../types';
+import { PubSub } from '../tools';
 
 /**
  * 定义一个请求库类，实现 IRequest 接口
@@ -34,6 +35,25 @@ export class RequestLibraryImpl implements IRequest {
      */
     private timeout: number;
 
+    /**
+     * 定义一个私有的属性，用来存储请求队列
+     */
+    private requestQueue: {
+        xhr: XMLHttpRequest,
+        config?: RequestConfig
+    }[] = [];
+
+    /**
+     * 定义一个私有的属性，用来存储当前请求
+     */
+    private currentRequest: {
+        xhr: XMLHttpRequest,
+        config?: RequestConfig
+    } | null = null;
+
+    private pubSub: PubSub = new PubSub();
+
+
     constructor(xhr: XMLHttpRequest) {
         // 初始化 XMLHttpRequest 实例
         this.xhr = xhr;
@@ -44,6 +64,71 @@ export class RequestLibraryImpl implements IRequest {
     }
 
     /**
+     * 定义一个私有的方法，用来处理请求队列
+     */
+    private processQueue() {
+        // 如果当前请求为空，且请求队列不为空
+        if (this.currentRequest === null && this.requestQueue.length > 0) {
+            // 从队列中取出第一个请求对象
+            this.currentRequest = this.requestQueue.shift() as {
+                xhr: XMLHttpRequest,
+                config?: RequestConfig
+            };
+            // 发送请求
+            this.currentRequest?.xhr.send();
+            this.currentRequest.xhr.onreadystatechange = () => {
+                // 如果请求状态为4，表示请求已完成
+                if (this.currentRequest?.xhr.readyState === 4) {
+                    // console.log(this.currentRequest?.xhr.status, this.currentRequest?.config?.url);
+                    if (this.currentRequest?.xhr.status >= 200 && this.currentRequest?.xhr.status < 300) {
+                        console.log('response', this.currentRequest?.xhr.responseText);
+                        // 发布响应事件，将响应数据传递出去
+                        this.pubSub.publish('response', this.currentRequest?.xhr.responseText);
+                    }
+                }
+                // 将当前请求置为空
+                this.currentRequest = null;
+                // 递归调用，处理下一个请求
+                this.processQueue();
+            };
+            
+            this.currentRequest.xhr.onerror = () => {
+                // 处理错误信息
+                console.warn("An error occurred while sending the request.");
+                this.pubSub.publish('error', this.currentRequest?.xhr.statusText);
+                // 将当前请求置为空
+                this.currentRequest = null;
+                // 递归调用，处理下一个请求
+                this.processQueue();
+            };
+        }
+    }
+
+    private addRequestToQueue(url: string, method: RequestMethod = 'GET', config?: RequestConfig) {
+        // 创建 XMLHttpRequest 实例，并为其设置请求方法和请求地址
+        let newRequest = new XMLHttpRequest();
+        // 设置请求方法和请求地址
+        if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+            // 如果请求参数存在，则将请求参数转换为查询字符串，拼接到请求地址后面
+            if (config?.params && isEmptyObject(config.params) === false) {
+                url += `?${objToQueryString(config.params)}`;
+            }
+        }
+        newRequest.open(method, url, true);
+        // 设置请求头
+        this._setHeaders(newRequest, config?.headers);
+        // 设置超时时间
+        newRequest.timeout = config?.timeout ?? this.timeout;
+        // 将请求添加到请求队列中
+        this.requestQueue.push({
+            xhr: newRequest,
+            config: config
+        });
+        // 处理请求队列
+        this.processQueue();
+    }
+
+    /**
      * 重写 get 方法，接收请求地址和请求参数，返回一个 Promise 对象，实现 get 请求
      * @param url - 请求地址
      * @param config - 请求配置
@@ -51,37 +136,61 @@ export class RequestLibraryImpl implements IRequest {
      * @memberof RequestLibraryImpl
      */
     public get(url: string, config?: RequestConfig): Promise<any> {
+        // return new Promise((resolve, reject) => {
+        //     this.xhr = new XMLHttpRequest();
+        //     // 如果请求参数存在，则将请求参数转换为查询字符串，拼接到请求地址后面
+        //     if (config?.params && isEmptyObject(config.params) === false) {
+        //         url += `?${objToQueryString(config.params)}`;
+        //     }
+        //     // 设置请求方法和请求地址
+        //     this.xhr.open('GET', url);
+        //     // 设置请求头
+        //     this._setHeaders();
+        //     console.log('config', config);
+        //     // 设置超时时间
+        //     this.xhr.timeout = config?.timeout ?? this.timeout;
+        //     // 发送请求
+        //     this.xhr.send();
+        //     // 监听响应
+        //     this.xhr.onreadystatechange = () => {
+        //         if (this.xhr.readyState === 4) {
+        //             if (this.xhr.status == 200) {
+        //                 // 返回响应数据
+        //                 console.log('response', this.xhr.responseText);
+        //                 resolve(this.xhr.responseText);
+        //             } else {
+        //                 // 返回响应错误信息
+        //                 reject(new Error(`请求失败：${this.xhr.statusText}`));
+        //             }
+        //             // this.xhr.abort();
+        //         }
+        //     }
+        //     // 监听错误响应
+        //     this.xhr.onerror = () => {
+        //         // 返回错误信息
+        //         reject(new Error(`请求失败：${this.xhr.statusText}`));
+        //     }
+        // });
         return new Promise((resolve, reject) => {
-            // 如果请求参数存在，则将请求参数转换为查询字符串，拼接到请求地址后面
-            if (config?.params && isEmptyObject(config.params) === false) {
-                url += `?${objToQueryString(config.params)}`;
-            }
-            // 设置请求方法和请求地址
-            this.xhr.open('GET', url, true);
-            // 设置请求头
-            this._setHeaders();
-            console.log('config', config);
-            // 设置超时时间
-            this.xhr.timeout = config?.timeout ?? this.timeout;
-            // 发送请求
-            this.xhr.send();
-            // 监听响应
-            this.xhr.onreadystatechange = () => {
-                if (this.xhr.readyState === 4) {
-                    if (this.xhr.status >= 200 && this.xhr.status < 300) {
-                        // 返回响应数据
-                        resolve(this.xhr.responseText);
-                    } else {
-                        // 返回响应错误信息
-                        reject(new Error(`请求失败：${this.xhr.statusText}`));
-                    }
+            this.addRequestToQueue(url, 'GET', config);
+            this.pubSub.subscribe('response', (data: any) => {
+                // 如果响应类型为json，则将响应数据转换为json格式
+                if (config?.dataType === 'json') {
+                    data = JSON.parse(data);
                 }
-            }
-            // 监听错误响应
-            this.xhr.onerror = () => {
-                // 返回错误信息
-                reject(new Error(`请求失败：${this.xhr.statusText}`));
-            }
+                resolve(data);
+                // this.pubSub.unsuscribe('response', (data: any) => {
+                //     console.log('unsuscribe', data);
+                // });
+                // return;
+            });
+            this.pubSub.subscribe('error', (error: any) => {
+                reject(error);
+                // this.pubSub.unsuscribe('error', (error: any) => {
+                //     console.log('unsuscribe', error);
+                // });
+                // return;
+            });
         });
     }
 
@@ -376,8 +485,9 @@ export class RequestLibraryImpl implements IRequest {
      * @param value - 请求头的值
      * @memberof RequestLibraryImpl
      */
-    public setHeader(key: string, value: string): void {
+    public setHeader(key: string, value: string): this {
         this.headers[key] = value;
+        return this;
     }
 
     /**
@@ -385,8 +495,9 @@ export class RequestLibraryImpl implements IRequest {
      * @param timeout - 超时时间
      * @memberof RequestLibraryImpl
      */
-    public setTimeout(timeout: number): void {
+    public setTimeout(timeout: number): this {
         this.timeout = timeout;
+        return this;
     }
     
     /**
@@ -394,8 +505,9 @@ export class RequestLibraryImpl implements IRequest {
      * @param headers - 请求头对象
      * @memberof RequestLibraryImpl 
      */
-    public setHeaders(headers: Record<string, string>): void {
+    public setHeaders(headers: Record<string, string>): this {
         this.headers = headers;
+        return this;
     }
 
     /**
@@ -412,10 +524,10 @@ export class RequestLibraryImpl implements IRequest {
      * @private
      * @memberof RequestLibraryImpl
      */
-    private _setHeaders(): void {
+    private _setHeaders(xhr?: XMLHttpRequest, headers?: Record<string, string>): void {
         // 遍历请求头对象，设置请求头
-        Object.entries(this.headers).forEach(([key, value]) => {
-            this.xhr.setRequestHeader(key, value);
+        Object.entries(headers as Record<string, string>).forEach(([key, value]) => {
+            xhr && xhr.setRequestHeader(key, value);
         });
     }
 };
